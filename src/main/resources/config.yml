@@ -1,0 +1,40 @@
+#########
+#
+# ClosedBlocksElevator
+
+#If true, only the elevator owner will be able to camouflage an elevator
+CamouflageOnlyOwner: false
+
+#If true, only the elevator owner will be able to break the elevator
+BreakOnlyOwner: false
+
+#Elevator max range. Any value lower than 16 will be interpreted as 16
+#
+# PLEASE NOTE, THE PLUGIN DOES NOT DO ANY IMPORTANT MATH CALCULATION, IT USES
+# A VERY SIMPLE INDEXES SYSTEM TO KNOW WHERE THE NEXT OR PREVIOUS ELEVATOR IS
+# BASED ON BLOCK Y AXIS. SETTING THIS RANGE TO FOR EXAMPLE 360 WON'T HAVE ANY
+# IMPACT ON SERVER OTHER THAN BALANCING OR LIMITING ELEVATORS
+MaxRange: 64
+
+#Prevent explosions from breaking elevator blocks.
+PreventExplode: true
+
+#Prevent fire from burning elevator blocks.
+PreventBurn: true
+
+#Prevent elevator from being taken by mobs ( ex: Enderman )
+PreventGrief: true
+
+#The item material to use as elevator (MUST BE BLOCK)
+ItemMaterial: Quartz block
+
+#The item name
+ItemName: "&fElevator"
+
+#The elevator lore
+ItemLore:
+  - "&7Put this elevator anywhere"
+  - "&7under another elevator or"
+  - "&7over another elevator to"
+  - "&7allow you go through them"
+  - "&7by jumping or crouching"

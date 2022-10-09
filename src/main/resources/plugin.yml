@@ -1,0 +1,15 @@
+name: ClosedBlocksElevator
+version: '${project.version}'
+main: ml.karmaconfigs.closedblockselevator.Main
+api-version: 1.13
+prefix: CBE
+depend: [ AnotherBarelyCodedKarmaPlugin ]
+authors: [ KarmaDev ]
+description: ClosedBlocksElevator is a plugin to add elevators into minecraft. The plugin works a bit like the mod
+website: https://karmadev.es/
+
+commands:
+  give-elevator:
+    description: Give an elevator to X player or yourself
+  reload-elevator:
+    description: Reloads the elevator plugin

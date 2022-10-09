@@ -1,0 +1,36 @@
+#########
+#
+# ClosedBlocksElevator
+
+#When an elevator has been put
+ElevatorPlaced: "&aElevator placed successfully"
+
+#When an elevator failed to put
+ElevatorFailed: "&cFailed to place elevator"
+
+#When an elevator has been successfully hidden
+ElevatorHidden: "&aYou've successfully hide the elevator"
+
+#When an elevator has failed to hide
+ElevatorHideError: "&cFailed to hide the elevator"
+
+#When an elevator has been destroyed
+ElevatorDestroyed: "&aDestroyed elevator successfully"
+
+#When an elevator failed to destroy (rollback)
+ElevatorFailDestroy: "&cFailed to destroy elevator"
+
+#When an elevator is given to a player
+ElevatorGive: "&aSuccessfully gave x{amount} elevators to {player}"
+
+#When a player receives an elevator by an administrator
+ElevatorReceive: "&aYou've received x{amount} elevators"
+
+#When a player is not online
+NotOnline: "&cThe player {player} is not online"
+
+#When a player doesn't have enough space in his inventory
+NotEnoughSpace: "&cThe player {player} didn't had enough space to keep x{amount} elevators. So we gave him x{new_amount} instead"
+
+#When permissions are required
+Permission: "&cYou do not have enough permissions to execute that command!"
