@@ -17,10 +17,10 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
 
 public class ActionListener implements Listener {
 
-    private static Sound up_sound = null;
-    private static Sound down_sound = null;
+    private Sound up_sound = null;
+    private Sound down_sound = null;
 
-    static {
+    public ActionListener() {
         Sound[] sounds = Sound.values();
 
         for (Sound sound : sounds) {
@@ -169,19 +169,7 @@ public class ActionListener implements Listener {
         }
 
         if (bottomSlab != null) {
-            if (targetSlab != null) {
-                return roofSlab == null;
-            } else {
-                if (roofSlab != null) {
-                    return roofSlab.equals(Slab.Type.TOP);
-                } else {
-                    if (!target_block.getType().isSolid()) {
-                        return !roof.getType().isSolid();
-                    } else {
-                        return false;
-                    }
-                }
-            }
+            return (targetSlab != null && roofSlab == null) || (roofSlab != null ? roofSlab.equals(Slab.Type.TOP) : (target_block.getType().isSolid() && roof.getType().isSolid()));
         } else {
             if (targetSlab != null) {
                 if (roofSlab != null) {
@@ -193,19 +181,11 @@ public class ActionListener implements Listener {
                         case BOTTOM:
                             return roofSlab.equals(Slab.Type.TOP);
                     }
-                } else {
-                    return true;
                 }
+
+                return true;
             } else {
-                if (!target_block.getType().isSolid()) {
-                    if (roofSlab != null) {
-                        return roofSlab.equals(Slab.Type.TOP);
-                    } else {
-                        return !roof.getType().isSolid();
-                    }
-                } else {
-                    return false;
-                }
+                return (!target_block.getType().isSolid() && (roofSlab != null ? roofSlab.equals(Slab.Type.TOP) : !roof.getType().isSolid()));
             }
         }
     }

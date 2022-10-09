@@ -1,6 +1,7 @@
 package ml.karmaconfigs.closedblockselevator.command;
 
 import ml.karmaconfigs.api.common.utils.string.StringUtils;
+import ml.karmaconfigs.closedblockselevator.Client;
 import ml.karmaconfigs.closedblockselevator.storage.Config;
 import ml.karmaconfigs.closedblockselevator.storage.Messages;
 import org.bukkit.Material;
@@ -39,13 +40,16 @@ public class ReloadElevator implements CommandExecutor {
         Config config = new Config();
 
         if (sender instanceof Player) {
-            if (sender.hasPermission("elevator.reload")) {
+            Player player = (Player) sender;
+            Client client = new Client(player);
+
+            if (player.hasPermission("elevator.reload")) {
                 Config.reload();
                 Messages.reload();
 
-                sender.sendMessage(StringUtils.toColor("&aReloaded elevator plugin"));
+                client.send("&aReloaded elevator plugin");
             } else {
-                sender.sendMessage(StringUtils.toColor(messages.permission()));
+                client.send(messages.permission());
             }
         } else {
             Config.reload();

@@ -1,6 +1,7 @@
 package ml.karmaconfigs.closedblockselevator.listener;
 
 import ml.karmaconfigs.api.common.utils.string.StringUtils;
+import ml.karmaconfigs.closedblockselevator.Client;
 import ml.karmaconfigs.closedblockselevator.storage.Config;
 import ml.karmaconfigs.closedblockselevator.storage.Elevator;
 import ml.karmaconfigs.closedblockselevator.storage.ElevatorStorage;
@@ -15,6 +16,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockBurnEvent;
+import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
@@ -29,10 +31,10 @@ import static ml.karmaconfigs.closedblockselevator.ClosedBlocksElevator.plugin;
 
 public class BlockListener implements Listener {
 
-    private static Sound enderman_sound = null;
-    private static Sound block_break = null;
+    private Sound enderman_sound = null;
+    private Sound block_break = null;
 
-    static {
+    public BlockListener() {
         Sound[] sounds = Sound.values();
 
         for (Sound sound : sounds) {
@@ -52,6 +54,7 @@ public class BlockListener implements Listener {
 
         Player player = e.getPlayer();
         Block clicked = e.getClickedBlock();
+        Client client = new Client(player);
 
         boolean handled = false;
         if (e.getAction().equals(Action.RIGHT_CLICK_BLOCK) && clicked != null) { //Block place
@@ -68,9 +71,9 @@ public class BlockListener implements Listener {
 
                                 if (ElevatorStorage.addElevator(where)) {
                                     where.setMetadata("elevator_owner", new FixedMetadataValue(plugin, player.getUniqueId().toString()));
-                                    player.sendMessage(StringUtils.toColor(messages.elevatorPlaced()));
+                                    client.send(messages.elevatorPlaced());
                                 } else {
-                                    player.sendMessage(StringUtils.toColor(messages.elevatorFailed()));
+                                    client.send(messages.elevatorFailed());
                                     e.setCancelled(true);
                                 }
 
@@ -97,9 +100,9 @@ public class BlockListener implements Listener {
                                                 player.playSound(player.getLocation(), enderman_sound, 2f, 0.5f);
                                             }
 
-                                            player.sendMessage(StringUtils.toColor(messages.elevatorHidden()));
+                                            client.send(messages.elevatorHidden());
                                         } else {
-                                            player.sendMessage(StringUtils.toColor(messages.elevatorHideError()));
+                                            client.send(messages.elevatorHideError());
                                         }
                                     }
                                 }
@@ -128,14 +131,14 @@ public class BlockListener implements Listener {
 
                             clicked.setType(Material.AIR);
                             player.getWorld().dropItemNaturally(clicked.getLocation(), drop);
-                            player.sendMessage(StringUtils.toColor(messages.elevatorDestroyed()));
+                            client.send(messages.elevatorDestroyed());
 
                             clicked.removeMetadata("elevator_owner", plugin);
                             if (block_break != null) {
                                 player.playSound(player.getLocation(), block_break, 2f, 1f);
                             }
                         } else {
-                            player.sendMessage(StringUtils.toColor(messages.elevatorDestroyFail()));
+                            client.send(messages.elevatorDestroyFail());
                         }
                     }
 
@@ -149,6 +152,7 @@ public class BlockListener implements Listener {
     public void onBlockBreak(BlockBreakEvent e) {
         Player player = e.getPlayer();
         Block block = e.getBlock();
+        Client client = new Client(player);
 
         Messages messages = new Messages();
         Config config = new Config();
@@ -175,11 +179,11 @@ public class BlockListener implements Listener {
                         e.setDropItems(false); //Apparently, this method does not exist in 1.7
                     } catch (Throwable ignored) {}
 
-                    player.sendMessage(StringUtils.toColor(messages.elevatorDestroyed()));
+                    client.send(messages.elevatorDestroyed());
                     block.removeMetadata("elevator_owner", plugin);
                 } else {
                     e.setCancelled(true);
-                    player.sendMessage(StringUtils.toColor(messages.elevatorDestroyFail()));
+                    client.send(messages.elevatorDestroyFail());
                 }
             } else {
                 e.setCancelled(true);
@@ -188,7 +192,7 @@ public class BlockListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onBurn(BlockBurnEvent e) {
+    public void onBurn(BlockIgniteEvent e) {
         if (!e.isCancelled()) {
             Block block = null;
             Config config = new Config();

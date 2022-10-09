@@ -1,6 +1,7 @@
 package ml.karmaconfigs.closedblockselevator.command;
 
 import ml.karmaconfigs.api.common.utils.string.StringUtils;
+import ml.karmaconfigs.closedblockselevator.Client;
 import ml.karmaconfigs.closedblockselevator.storage.Config;
 import ml.karmaconfigs.closedblockselevator.storage.Messages;
 import org.bukkit.Material;
@@ -39,13 +40,18 @@ public class AddElevator implements CommandExecutor {
         Config config = new Config();
 
         if (sender instanceof Player) {
-            if (sender.hasPermission("elevator.add")) {
+            Player issuer = (Player) sender;
+            Client client = new Client(issuer);
+
+            if (issuer.hasPermission("elevator.add")) {
                 switch (args.length) {
                     case 1: {
                         String player_name = args[0];
                         Player player = plugin.getServer().getPlayer(player_name);
 
                         if (player != null) {
+                            Client target = new Client(player);
+
                             Inventory player_inventory = player.getInventory();
                             int available = 0;
                             for (int slot = 0; slot < player_inventory.getSize(); slot++) {
@@ -74,8 +80,8 @@ public class AddElevator implements CommandExecutor {
                             }
 
                             if (available >= 1) {
-                                sender.sendMessage(StringUtils.toColor(messages.elevatorGive(1, player_name)));
-                                player.sendMessage(StringUtils.toColor(messages.elevatorReceive(1)));
+                                client.send(messages.elevatorGive(1, player_name));
+                                target.send(messages.elevatorReceive(1));
 
                                 ItemStack elevator = new ItemStack(config.elevatorItem(), 1);
                                 ItemMeta dropMeta = elevator.getItemMeta();
@@ -87,14 +93,13 @@ public class AddElevator implements CommandExecutor {
 
                                 player_inventory.addItem(elevator);
                             } else {
-                                sender.sendMessage(StringUtils.toColor(messages.notEnoughSpace(1, 0, player_name)));
+                                client.send(messages.notEnoughSpace(1, 0, player_name));
                             }
                         } else {
                             try {
                                 int amount = Integer.parseInt(player_name);
 
-                                player = (Player) sender;
-                                Inventory player_inventory = player.getInventory();
+                                Inventory player_inventory = issuer.getInventory();
                                 int available = 0;
                                 for (int slot = 0; slot < player_inventory.getSize(); slot++) {
                                     ItemStack hand = player_inventory.getItem(slot);
@@ -118,7 +123,7 @@ public class AddElevator implements CommandExecutor {
 
                                 if (available <= amount) {
                                     amount = available;
-                                    sender.sendMessage(StringUtils.toColor(messages.notEnoughSpace(amount, available, player_name)));
+                                    client.send(messages.notEnoughSpace(amount, available, player_name));
                                 }
 
                                 List<Integer> stacks = new ArrayList<>();
@@ -149,9 +154,9 @@ public class AddElevator implements CommandExecutor {
                                     }
                                 }
 
-                                sender.sendMessage(StringUtils.toColor(messages.elevatorGive(amount, player_name)));
+                                client.send(messages.elevatorGive(amount, player_name));
                             } catch (Throwable ex) {
-                                sender.sendMessage(StringUtils.toColor(messages.notOnline(player_name)));
+                                client.send(messages.notOnline(player_name));
                             }
                         }
                     }
@@ -165,6 +170,8 @@ public class AddElevator implements CommandExecutor {
 
                             Player player = plugin.getServer().getPlayer(player_name);
                             if (player != null) {
+                                Client target = new Client(player);
+
                                 Inventory player_inventory = player.getInventory();
                                 int available = 0;
                                 for (int slot = 0; slot < player_inventory.getSize(); slot++) {
@@ -189,7 +196,7 @@ public class AddElevator implements CommandExecutor {
 
                                 if (available <= amount) {
                                     amount = available;
-                                    sender.sendMessage(StringUtils.toColor(messages.notEnoughSpace(amount, available, player_name)));
+                                    client.send(messages.notEnoughSpace(amount, available, player_name));
                                 }
 
                                 List<Integer> stacks = new ArrayList<>();
@@ -220,22 +227,22 @@ public class AddElevator implements CommandExecutor {
                                     }
                                 }
 
-                                sender.sendMessage(StringUtils.toColor(messages.elevatorGive(amount, player_name)));
-                                player.sendMessage(StringUtils.toColor(messages.elevatorReceive(amount)));
+                                client.send(messages.elevatorGive(amount, player_name));
+                                target.send(messages.elevatorReceive(amount));
                             } else {
-                                sender.sendMessage(StringUtils.toColor(messages.notOnline(player_name)));
+                                client.send(messages.notOnline(player_name));
                             }
                         } catch (Throwable ex) {
-                            sender.sendMessage(StringUtils.toColor(messages.permission())); //Don't know what to do, so we send permission error
+                            client.send("&cA plugin error occurred");
                         }
                     }
                     break;
                     default:
-                        sender.sendMessage(StringUtils.toColor("&cPlease provide a player name and (optional) amount of elevators to give"));
+                        client.send("&cPlease provide a player name and (optional) amount of elevators to give");
                         break;
                 }
             } else {
-                sender.sendMessage(StringUtils.toColor(messages.permission()));
+                client.send(messages.permission());
             }
         } else {
             switch (args.length) {
@@ -244,6 +251,8 @@ public class AddElevator implements CommandExecutor {
                     Player player = plugin.getServer().getPlayer(player_name);
 
                     if (player != null) {
+                        Client target = new Client(player);
+
                         Inventory player_inventory = player.getInventory();
                         int available = 0;
                         for (int slot = 0; slot < player_inventory.getSize(); slot++) {
@@ -273,7 +282,7 @@ public class AddElevator implements CommandExecutor {
 
                         if (available >= 1) {
                             plugin.console().send(messages.elevatorGive(1, player_name));
-                            player.sendMessage(StringUtils.toColor(messages.elevatorReceive(1)));
+                            target.send(messages.elevatorReceive(1));
 
                             ItemStack elevator = new ItemStack(config.elevatorItem(), 1);
                             ItemMeta dropMeta = elevator.getItemMeta();
@@ -302,6 +311,8 @@ public class AddElevator implements CommandExecutor {
                         Player player = plugin.getServer().getPlayer(player_name);
 
                         if (player != null) {
+                            Client target = new Client(player);
+
                             Inventory player_inventory = player.getInventory();
                             int available = 0;
                             for (int slot = 0; slot < player_inventory.getSize(); slot++) {
@@ -358,7 +369,7 @@ public class AddElevator implements CommandExecutor {
                             }
 
                             plugin.console().send(messages.elevatorGive(amount, player_name));
-                            player.sendMessage(StringUtils.toColor(messages.elevatorReceive(amount)));
+                            target.send(messages.elevatorReceive(amount));
                         } else {
                             plugin.console().send(messages.notOnline(player_name));
                         }
