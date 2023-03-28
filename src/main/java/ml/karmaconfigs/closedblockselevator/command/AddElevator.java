@@ -1,9 +1,12 @@
 package ml.karmaconfigs.closedblockselevator.command;
 
-import ml.karmaconfigs.api.common.utils.string.StringUtils;
+import ml.karmaconfigs.api.common.string.StringUtils;
+import ml.karmaconfigs.api.common.utils.enums.Level;
 import ml.karmaconfigs.closedblockselevator.Client;
+import ml.karmaconfigs.closedblockselevator.Main;
 import ml.karmaconfigs.closedblockselevator.storage.Config;
 import ml.karmaconfigs.closedblockselevator.storage.Messages;
+import ml.karmaconfigs.closedblockselevator.storage.custom.IAdder;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -11,16 +14,21 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static ml.karmaconfigs.closedblockselevator.ClosedBlocksElevator.LAST_LINE_MATCHER;
 import static ml.karmaconfigs.closedblockselevator.ClosedBlocksElevator.plugin;
 
 public class AddElevator implements CommandExecutor {
+
+    private final Messages messages = new Messages();
+    private final Config config = new Config();
 
     /**
      * Executes the given command, returning its success.
@@ -36,8 +44,7 @@ public class AddElevator implements CommandExecutor {
      */
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        Messages messages = new Messages();
-        Config config = new Config();
+
 
         if (sender instanceof Player) {
             Player issuer = (Player) sender;
@@ -53,77 +60,27 @@ public class AddElevator implements CommandExecutor {
                             Client target = new Client(player);
 
                             Inventory player_inventory = player.getInventory();
-                            int available = 0;
-                            for (int slot = 0; slot < player_inventory.getSize(); slot++) {
-                                if (available < 1) {
-                                    ItemStack hand = player_inventory.getItem(slot);
-                                    if (hand != null && !hand.getType().equals(Material.AIR)) {
-                                        ItemMeta meta = hand.getItemMeta();
-                                        if (meta != null) {
-                                            if (meta.hasLore()) {
-                                                List<String> lore = meta.getLore();
-                                                if (lore != null && !lore.isEmpty()) {
-                                                    String last_line = lore.get(lore.size() - 1);
-                                                    if (last_line.equals(StringUtils.toColor("&c&b&e"))) {
-                                                        available = available + (hand.getMaxStackSize() - hand.getAmount());
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        available = available + 64;
-                                        break;
-                                    }
-                                } else {
-                                    break;
-                                }
-                            }
+                            int available = countSlots(player);
 
                             if (available >= 1) {
                                 client.send(messages.elevatorGive(1, player_name));
                                 target.send(messages.elevatorReceive(1));
 
-                                ItemStack elevator = new ItemStack(config.elevatorItem(), 1);
-                                ItemMeta dropMeta = elevator.getItemMeta();
-                                if (dropMeta != null) {
-                                    dropMeta.setDisplayName(config.elevatorItemName());
-                                    dropMeta.setLore(config.elevatorItemLore());
-                                    elevator.setItemMeta(dropMeta);
-                                }
-
-                                player_inventory.addItem(elevator);
+                                grantElevator(player, Collections.singletonList(1));
                             } else {
                                 client.send(messages.notEnoughSpace(1, 0, player_name));
                             }
                         } else {
                             try {
                                 int amount = Integer.parseInt(player_name);
+                                player_name = issuer.getName();
 
                                 Inventory player_inventory = issuer.getInventory();
-                                int available = 0;
-                                for (int slot = 0; slot < player_inventory.getSize(); slot++) {
-                                    ItemStack hand = player_inventory.getItem(slot);
-                                    if (hand != null && !hand.getType().equals(Material.AIR)) {
-                                        ItemMeta meta = hand.getItemMeta();
-                                        if (meta != null) {
-                                            if (meta.hasLore()) {
-                                                List<String> lore = meta.getLore();
-                                                if (lore != null && !lore.isEmpty()) {
-                                                    String last_line = StringUtils.stripColor(lore.get(lore.size() - 1));
-                                                    if (last_line.equals(LAST_LINE_MATCHER)) {
-                                                        available = available + (hand.getMaxStackSize() - hand.getAmount());
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        available = available + 64;
-                                    }
-                                }
+                                int available = countSlots(player);
 
                                 if (available <= amount) {
-                                    amount = available;
                                     client.send(messages.notEnoughSpace(amount, available, player_name));
+                                    amount = available;
                                 }
 
                                 List<Integer> stacks = new ArrayList<>();
@@ -140,19 +97,7 @@ public class AddElevator implements CommandExecutor {
                                     }
                                 }
 
-                                if (!stacks.isEmpty()) {
-                                    for (int stack : stacks) {
-                                        ItemStack elevator = new ItemStack(config.elevatorItem(), stack);
-                                        ItemMeta dropMeta = elevator.getItemMeta();
-                                        if (dropMeta != null) {
-                                            dropMeta.setDisplayName(config.elevatorItemName());
-                                            dropMeta.setLore(config.elevatorItemLore());
-                                            elevator.setItemMeta(dropMeta);
-                                        }
-
-                                        player_inventory.addItem(elevator);
-                                    }
-                                }
+                                grantElevator(player, stacks);
 
                                 client.send(messages.elevatorGive(amount, player_name));
                             } catch (Throwable ex) {
@@ -173,30 +118,11 @@ public class AddElevator implements CommandExecutor {
                                 Client target = new Client(player);
 
                                 Inventory player_inventory = player.getInventory();
-                                int available = 0;
-                                for (int slot = 0; slot < player_inventory.getSize(); slot++) {
-                                    ItemStack hand = player_inventory.getItem(slot);
-                                    if (hand != null && !hand.getType().equals(Material.AIR)) {
-                                        ItemMeta meta = hand.getItemMeta();
-                                        if (meta != null) {
-                                            if (meta.hasLore()) {
-                                                List<String> lore = meta.getLore();
-                                                if (lore != null && !lore.isEmpty()) {
-                                                    String last_line = StringUtils.stripColor(lore.get(lore.size() - 1));
-                                                    if (last_line.equals(LAST_LINE_MATCHER)) {
-                                                        available = available + (hand.getMaxStackSize() - hand.getAmount());
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        available = available + 64;
-                                    }
-                                }
+                                int available = countSlots(player);
 
                                 if (available <= amount) {
-                                    amount = available;
                                     client.send(messages.notEnoughSpace(amount, available, player_name));
+                                    amount = available;
                                 }
 
                                 List<Integer> stacks = new ArrayList<>();
@@ -213,19 +139,7 @@ public class AddElevator implements CommandExecutor {
                                     }
                                 }
 
-                                if (!stacks.isEmpty()) {
-                                    for (int stack : stacks) {
-                                        ItemStack elevator = new ItemStack(config.elevatorItem(), stack);
-                                        ItemMeta dropMeta = elevator.getItemMeta();
-                                        if (dropMeta != null) {
-                                            dropMeta.setDisplayName(config.elevatorItemName());
-                                            dropMeta.setLore(config.elevatorItemLore());
-                                            elevator.setItemMeta(dropMeta);
-                                        }
-
-                                        player_inventory.addItem(elevator);
-                                    }
-                                }
+                                grantElevator(player, stacks);
 
                                 client.send(messages.elevatorGive(amount, player_name));
                                 target.send(messages.elevatorReceive(amount));
@@ -254,45 +168,12 @@ public class AddElevator implements CommandExecutor {
                         Client target = new Client(player);
 
                         Inventory player_inventory = player.getInventory();
-                        int available = 0;
-                        for (int slot = 0; slot < player_inventory.getSize(); slot++) {
-                            if (available < 1) {
-                                ItemStack hand = player_inventory.getItem(slot);
-                                if (hand != null && !hand.getType().equals(Material.AIR)) {
-                                    ItemMeta meta = hand.getItemMeta();
-                                    if (meta != null) {
-                                        if (meta.hasLore()) {
-                                            List<String> lore = meta.getLore();
-                                            if (lore != null && !lore.isEmpty()) {
-                                                String last_line = StringUtils.stripColor(lore.get(lore.size() - 1));
-                                                if (last_line.equals(LAST_LINE_MATCHER)) {
-                                                    available = available + (hand.getMaxStackSize() - hand.getAmount());
-                                                }
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    available = available + 64;
-                                    break;
-                                }
-                            } else {
-                                break;
-                            }
-                        }
-
+                        int available = countSlots(player);
                         if (available >= 1) {
                             plugin.console().send(messages.elevatorGive(1, player_name));
                             target.send(messages.elevatorReceive(1));
 
-                            ItemStack elevator = new ItemStack(config.elevatorItem(), 1);
-                            ItemMeta dropMeta = elevator.getItemMeta();
-                            if (dropMeta != null) {
-                                dropMeta.setDisplayName(config.elevatorItemName());
-                                dropMeta.setLore(config.elevatorItemLore());
-                                elevator.setItemMeta(dropMeta);
-                            }
-
-                            player_inventory.addItem(elevator);
+                            grantElevator(player, Collections.singletonList(1));
                         } else {
                             plugin.console().send(messages.notEnoughSpace(1, 0, player_name));
                         }
@@ -312,32 +193,11 @@ public class AddElevator implements CommandExecutor {
 
                         if (player != null) {
                             Client target = new Client(player);
-
-                            Inventory player_inventory = player.getInventory();
-                            int available = 0;
-                            for (int slot = 0; slot < player_inventory.getSize(); slot++) {
-                                ItemStack hand = player_inventory.getItem(slot);
-                                if (hand != null && !hand.getType().equals(Material.AIR)) {
-                                    ItemMeta meta = hand.getItemMeta();
-                                    if (meta != null) {
-                                        if (meta.hasLore()) {
-                                            List<String> lore = meta.getLore();
-                                            if (lore != null && !lore.isEmpty()) {
-                                                String last_line = StringUtils.stripColor(lore.get(lore.size() - 1));
-                                                if (last_line.equals(LAST_LINE_MATCHER)) {
-                                                    available = available + (hand.getMaxStackSize() - hand.getAmount());
-                                                }
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    available = available + 64;
-                                }
-                            }
+                            int available = countSlots(player);
 
                             if (available <= amount) {
-                                amount = available;
                                 plugin.console().send(messages.notEnoughSpace(amount, available, player_name));
+                                amount = available;
                             }
 
                             List<Integer> stacks = new ArrayList<>();
@@ -354,19 +214,7 @@ public class AddElevator implements CommandExecutor {
                                 }
                             }
 
-                            if (!stacks.isEmpty()) {
-                                for (int stack : stacks) {
-                                    ItemStack elevator = new ItemStack(config.elevatorItem(), stack);
-                                    ItemMeta dropMeta = elevator.getItemMeta();
-                                    if (dropMeta != null) {
-                                        dropMeta.setDisplayName(config.elevatorItemName());
-                                        dropMeta.setLore(config.elevatorItemLore());
-                                        elevator.setItemMeta(dropMeta);
-                                    }
-
-                                    player_inventory.addItem(elevator);
-                                }
-                            }
+                            grantElevator(player, stacks);
 
                             plugin.console().send(messages.elevatorGive(amount, player_name));
                             target.send(messages.elevatorReceive(amount));
@@ -385,5 +233,55 @@ public class AddElevator implements CommandExecutor {
         }
 
         return false;
+    }
+
+    private int countSlots(final Player player) {
+        Inventory player_inventory = player.getInventory();
+        int available = 0;
+        for (int slot = 0; slot < player_inventory.getSize(); slot++) {
+            ItemStack hand = player_inventory.getItem(slot);
+            if (hand != null && !hand.getType().equals(Material.AIR)) {
+                ItemMeta meta = hand.getItemMeta();
+                if (meta != null) {
+                    if (meta.hasLore()) {
+                        List<String> lore = meta.getLore();
+                        if (lore != null && !lore.isEmpty()) {
+                            String last_line = StringUtils.stripColor(lore.get(lore.size() - 1));
+                            if (last_line.equals(LAST_LINE_MATCHER)) {
+                                available = available + (hand.getMaxStackSize() - hand.getAmount());
+                            }
+                        }
+                    }
+                }
+            } else {
+                available = available + 64;
+            }
+        }
+
+        return available;
+    }
+
+    private void grantElevator(final Player player, final List<Integer> stacks) {
+        PlayerInventory inventory = player.getInventory();
+
+        for (int stack : stacks) {
+            ItemStack elevator = null;
+            if (Config.usesItemAdder()) {
+                elevator = IAdder.getItem();
+                elevator.setAmount(stack);
+            }
+            if (elevator == null) {
+                elevator = new ItemStack(config.elevatorItem(), stack);
+            }
+
+            ItemMeta dropMeta = elevator.getItemMeta();
+            if (dropMeta != null) {
+                dropMeta.setDisplayName(config.elevatorItemName());
+                dropMeta.setLore(config.elevatorItemLore());
+                elevator.setItemMeta(dropMeta);
+            }
+
+            inventory.addItem(elevator);
+        }
     }
 }

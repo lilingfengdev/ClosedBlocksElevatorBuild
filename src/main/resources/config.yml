@@ -8,6 +8,13 @@ CamouflageOnlyOwner: false
 #If true, only the elevator owner will be able to break the elevator
 BreakOnlyOwner: false
 
+#Show boss bar when a client uses an elevator
+ShowBossBar: true
+
+#Show particles in the direction where
+#the elevator goes
+ShowParticles: true
+
 #Elevator max range. Any value lower than 16 will be interpreted as 16
 #
 # PLEASE NOTE, THE PLUGIN DOES NOT DO ANY IMPORTANT MATH CALCULATION, IT USES
@@ -26,7 +33,35 @@ PreventBurn: true
 PreventGrief: true
 
 #The item material to use as elevator (MUST BE BLOCK)
+#
+#MAKE SURE IF YOU HAVE A MODEL DATA TO ALSO MODIFY THE
+#ItemModelData value
 ItemMaterial: Quartz block
+
+#Only for legacy servers, in where blocks still had IDs, for example
+# 1:1 or 5:2. This number is the second id which defines the block type.
+#
+# In modern versions of minecraft is everything set by item material name.
+ItemLegacyData: 0
+
+#If you have a custom model data, set the item model data number here (-1 = disabled)
+ItemModelData: -1
+
+#Custom model data configuration.
+#
+# Prompt: Asks users to download the custom model data texture. Defaults
+#         to false as we assume the client already has the textures downloaded
+# Download: The model data texture download URL, leave HASH empty if none
+# Force: Force clients to use the model data.
+# Advise: Send a warning to the client when he receives an elevator but he's not using
+#         the textures.
+ModelData:
+  Prompt: false
+  Download:
+    URL: ""
+    HASH: ""
+  Force: false
+  Advise: false
 
 #The item name
 ItemName: "&fElevator"
@@ -38,3 +73,46 @@ ItemLore:
   - "&7over another elevator to"
   - "&7allow you go through them"
   - "&7by jumping or crouching"
+
+#The item recipe.
+#
+# The syntax is this:
+# ItemMaterial: Z:1
+# ItemLore: Z:2
+# ItemName: Z:3
+#
+# Z = Elevator ;= Z:1 + Z:2 + Z:3
+#
+# CRAFTING TABLE
+#
+#   [A][B][C]
+#   [D][E][F] -> [Z]
+#   [G][H][I]
+#
+# ItemRecipe:
+#   - "A;B;C"
+#   - "D;E;F"
+#   - "G;H;I"
+#
+ItemRecipe:
+  - "*;*;*"
+  - "*;.;*"
+  - "*;*;*"
+
+#Disguising elevators mode.
+#
+# BLACKLIST: Blocks listed on DisguiseBlocks won't be allowed to use as disguise
+# WHITELIST: Only blocks listed on DisguiseBlocks will be abllowed to use as disguise
+DisguiseMode: "BLACKLIST"
+
+#Block disguising filter
+#
+# Please note; To use with ItemsAdders remember to use the
+# same format as to define an IA block as elevator block
+# (namespace:block)
+DisguiseBlocks:
+  - "DRAGON_EGG"
+  - "CHEST"
+  - "TRAP_CHEST"
+  - "ENDER_CHEST"
+  - "END_CRYSTAL"

@@ -1,6 +1,6 @@
 package ml.karmaconfigs.closedblockselevator.command;
 
-import ml.karmaconfigs.api.common.utils.string.StringUtils;
+import ml.karmaconfigs.api.common.string.StringUtils;
 import ml.karmaconfigs.closedblockselevator.Client;
 import ml.karmaconfigs.closedblockselevator.storage.Config;
 import ml.karmaconfigs.closedblockselevator.storage.Messages;

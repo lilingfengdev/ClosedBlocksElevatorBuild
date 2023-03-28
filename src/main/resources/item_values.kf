@@ -1,0 +1,5 @@
+("main"
+
+    '*' -> "WOOL"
+    '.' -> "ENDER_PEARL"
+)

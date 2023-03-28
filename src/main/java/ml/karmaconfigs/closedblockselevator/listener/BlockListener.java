@@ -1,22 +1,22 @@
 package ml.karmaconfigs.closedblockselevator.listener;
 
-import ml.karmaconfigs.api.common.utils.string.StringUtils;
+import dev.lone.itemsadder.api.CustomBlock;
+import ml.karmaconfigs.api.common.string.StringUtils;
 import ml.karmaconfigs.closedblockselevator.Client;
 import ml.karmaconfigs.closedblockselevator.storage.Config;
-import ml.karmaconfigs.closedblockselevator.storage.Elevator;
+import ml.karmaconfigs.closedblockselevator.storage.OwnerStorage;
+import ml.karmaconfigs.closedblockselevator.storage.elevator.Elevator;
 import ml.karmaconfigs.closedblockselevator.storage.ElevatorStorage;
 import ml.karmaconfigs.closedblockselevator.storage.Messages;
-import org.bukkit.Material;
-import org.bukkit.Sound;
+import ml.karmaconfigs.closedblockselevator.storage.custom.IAdder;
+import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockBurnEvent;
-import org.bukkit.event.block.BlockIgniteEvent;
+import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
@@ -60,89 +60,135 @@ public class BlockListener implements Listener {
         if (e.getAction().equals(Action.RIGHT_CLICK_BLOCK) && clicked != null) { //Block place
             ItemStack hand = e.getItem();
             if (hand != null) {
-                ItemMeta meta = hand.getItemMeta();
-                if (meta != null) {
-                    if (meta.hasLore()) {
-                        List<String> lore = meta.getLore();
-                        if (lore != null && !lore.isEmpty()) {
-                            String last_line = StringUtils.stripColor(lore.get(lore.size() - 1));
-                            if (last_line.equals(LAST_LINE_MATCHER)) {
-                                Block where = clicked.getRelative(e.getBlockFace());
+                if (!IAdder.isCustomItem(hand)) {
+                    ItemMeta meta = hand.getItemMeta();
+                    if (meta != null) {
+                        if (meta.hasLore()) {
+                            List<String> lore = meta.getLore();
+                            if (lore != null && !lore.isEmpty()) {
+                                String last_line = StringUtils.stripColor(lore.get(lore.size() - 1));
+                                if (last_line.equals(LAST_LINE_MATCHER)) {
+                                    Block where = clicked.getRelative(e.getBlockFace());
 
-                                if (ElevatorStorage.addElevator(where)) {
-                                    where.setMetadata("elevator_owner", new FixedMetadataValue(plugin, player.getUniqueId().toString()));
-                                    client.send(messages.elevatorPlaced());
-                                } else {
-                                    client.send(messages.elevatorFailed());
-                                    e.setCancelled(true);
+                                    if (ElevatorStorage.addElevator(where, hand)) {
+                                        OwnerStorage.assign(player, where);
+                                        client.send(messages.elevatorPlaced());
+
+                                        if (Config.usesItemAdder()) {
+                                            Block placed = clicked.getRelative(e.getBlockFace());
+                                            IAdder.tryBlock(placed.getLocation());
+                                        }
+                                    } else {
+                                        client.send(messages.elevatorFailed());
+                                        e.setCancelled(true);
+                                    }
+
+                                    if (!client.hasTextures() && !StringUtils.isNullOrEmpty(config.modelConfiguration().downloadURL())) {
+                                        client.send(messages.noTextures());
+                                    }
+
+                                    handled = true;
                                 }
-
-                                handled = true;
                             }
                         }
                     }
                 }
 
                 if (!handled && ElevatorStorage.isElevator(clicked)) {
-                    Material type = hand.getType();
-                    if (!type.equals(Material.AIR)) {
-                        if (!player.isSneaking()) {
-                            Elevator elevator = ElevatorStorage.loadElevator(clicked);
-                            assert elevator != null;
-
-                            if (!elevator.getCamouflage().equals(type)) {
-                                if (type.isBlock() && !player.isSneaking()) {
-                                    if (config.canCamouflage(player, clicked)) {
-                                        if (ElevatorStorage.hideElevator(elevator, type)) {
-                                            clicked.setType(type);
-
-                                            if (enderman_sound != null) {
-                                                player.playSound(player.getLocation(), enderman_sound, 2f, 0.5f);
-                                            }
-
-                                            client.send(messages.elevatorHidden());
+                    if (!IAdder.isCustomItem(hand) || !IAdder.isCustomBlock(clicked)) {
+                        Material type = hand.getType();
+                        if (!type.equals(Material.AIR)) {
+                            if (!player.isSneaking()) {
+                                Elevator elevator = ElevatorStorage.loadElevator(clicked);
+                                if (elevator != null) {
+                                    if (!elevator.isSameCamouflage(hand)) {
+                                        boolean block = false;
+                                        boolean solid = type.isSolid();
+                                        if (Config.usesItemAdder() && IAdder.isCustomItem(hand)) {
+                                            block = IAdder.isBlock(hand);
+                                            solid = block;
                                         } else {
-                                            client.send(messages.elevatorHideError());
+                                            block = type.isBlock();
+                                            solid = type.isSolid();
+                                        }
+
+                                        if (block && solid) {
+                                            if (config.canCamouflage(player, clicked)) {
+                                                if (Config.usesItemAdder() && IAdder.isBlock(hand)) {
+                                                    if (ElevatorStorage.iaHideElevator(elevator, clicked, IAdder.getItem(hand))) {
+                                                        if (enderman_sound != null) {
+                                                            player.playSound(player.getLocation(), enderman_sound, 2f, 0.5f);
+                                                        }
+
+                                                        client.send(messages.elevatorHidden());
+                                                    } else {
+                                                        client.send(messages.elevatorHideError());
+                                                    }
+                                                } else {
+                                                    if (ElevatorStorage.hideElevator(elevator, type)) {
+                                                        clicked.setType(type);
+
+                                                        if (enderman_sound != null) {
+                                                            player.playSound(player.getLocation(), enderman_sound, 2f, 0.5f);
+                                                        }
+
+                                                        client.send(messages.elevatorHidden());
+                                                    } else {
+                                                        client.send(messages.elevatorHideError());
+                                                    }
+                                                }
+
+                                                e.setCancelled(true);
+                                            }
                                         }
                                     }
                                 }
                             }
-
-                            e.setCancelled(true);
                         }
                     }
                 }
             }
         } else {
             if (e.getAction().equals(Action.LEFT_CLICK_BLOCK) && clicked != null && ElevatorStorage.isElevator(clicked)) {
-                ItemStack hand = e.getItem();
+                if (!IAdder.isCustomBlock(clicked)) {
+                    ItemStack hand = e.getItem();
 
-                if (player.isSneaking() && (hand == null || hand.getType().equals(Material.AIR))) {
-                    if (config.canBreak(player, clicked)) {
-                        if (ElevatorStorage.destroyElevator(clicked)) {
-                            clicked.getDrops().clear(); //We must make it drop an actual elevator, and not whatever it is
-                            ItemStack drop = new ItemStack(config.elevatorItem(), 1);
-                            ItemMeta dropMeta = drop.getItemMeta();
-                            if (dropMeta != null) {
-                                dropMeta.setDisplayName(config.elevatorItemName());
-                                dropMeta.setLore(config.elevatorItemLore());
-                                drop.setItemMeta(dropMeta);
+                    if (player.isSneaking() && (hand == null || hand.getType().equals(Material.AIR))) {
+                        if (config.canBreak(player, clicked)) {
+                            if (ElevatorStorage.destroyElevator(clicked)) {
+                                clicked.getDrops().clear(); //We must make it drop an actual elevator, and not whatever it is
+
+                                if (player.getGameMode().equals(GameMode.SURVIVAL)) {
+                                    ItemStack drop;
+                                    if (Config.usesItemAdder()) {
+                                        drop = IAdder.getItem();
+                                    } else {
+                                        drop = new ItemStack(config.elevatorItem(), 1);
+                                    }
+                                    ItemMeta meta = drop.getItemMeta();
+                                    if (meta != null) {
+                                        meta.setDisplayName(config.elevatorItemName());
+                                        meta.setLore(config.elevatorItemLore());
+                                        drop.setItemMeta(meta);
+                                    }
+
+                                    player.getWorld().dropItem(clicked.getLocation(), drop);
+                                }
+
+                                clicked.setType(Material.AIR);
+                                client.send(messages.elevatorDestroyed());
+
+                                OwnerStorage.remove(clicked);
+                                if (block_break != null) {
+                                    player.playSound(player.getLocation(), block_break, 2f, 1f);
+                                }
+                            } else {
+                                client.send(messages.elevatorDestroyFail());
                             }
-
-                            clicked.setType(Material.AIR);
-                            player.getWorld().dropItemNaturally(clicked.getLocation(), drop);
-                            client.send(messages.elevatorDestroyed());
-
-                            clicked.removeMetadata("elevator_owner", plugin);
-                            if (block_break != null) {
-                                player.playSound(player.getLocation(), block_break, 2f, 1f);
-                            }
-                        } else {
-                            client.send(messages.elevatorDestroyFail());
                         }
-                    }
 
-                    e.setCancelled(true);
+                        e.setCancelled(true);
+                    }
                 }
             }
         }
@@ -151,41 +197,60 @@ public class BlockListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onBlockBreak(BlockBreakEvent e) {
         Player player = e.getPlayer();
+
         Block block = e.getBlock();
         Client client = new Client(player);
 
         Messages messages = new Messages();
         Config config = new Config();
 
-        if (ElevatorStorage.isElevator(block)) {
-            Elevator elevator = ElevatorStorage.loadElevator(block);
-            assert elevator != null;
+        if (!IAdder.isCustomBlock(block)) {
+            if (ElevatorStorage.isElevator(block)) {
+                Elevator elevator = ElevatorStorage.loadElevator(block);
+                assert elevator != null;
 
-            if (config.canBreak(player, block)) {
-                if (ElevatorStorage.destroyElevator(block)) {
-                    block.getDrops().clear(); //We must make it drop an actual elevator, and not whatever it is
+                if (config.canBreak(player, block)) {
+                    if (ElevatorStorage.destroyElevator(block)) {
+                        block.getDrops().clear(); //We must make it drop an actual elevator, and not whatever it is
 
-                    ItemStack drop = new ItemStack(config.elevatorItem(), 1);
-                    ItemMeta meta = drop.getItemMeta();
-                    if (meta != null) {
-                        meta.setDisplayName(config.elevatorItemName());
-                        meta.setLore(config.elevatorItemLore());
-                        drop.setItemMeta(meta);
+                        if (player.getGameMode().equals(GameMode.SURVIVAL)) {
+                            ItemStack drop;
+                            if (Config.usesItemAdder()) {
+                                drop = IAdder.getItem();
+                            } else {
+                                drop = new ItemStack(config.elevatorItem(), 1);
+                            }
+                            ItemMeta meta = drop.getItemMeta();
+                            if (meta != null) {
+                                meta.setDisplayName(config.elevatorItemName());
+                                meta.setLore(config.elevatorItemLore());
+                                drop.setItemMeta(meta);
+                            }
+
+                            player.getWorld().dropItem(block.getLocation(), drop);
+                        }
+
+                        block.setType(Material.AIR);
+                        try {
+                            e.setDropItems(false); //Apparently, this method does not exist in 1.7
+                        } catch (Throwable ignored) {
+                        }
+
+                        if (Config.usesItemAdder()) {
+                            CustomBlock cb = CustomBlock.byAlreadyPlaced(block);
+                            if (cb != null) {
+                                cb.playBreakEffect();
+                                cb.remove();
+                            }
+                        }
+
+                        client.send(messages.elevatorDestroyed());
+                        OwnerStorage.remove(block);
+                    } else {
+                        client.send(messages.elevatorDestroyFail());
                     }
-
-                    block.setType(Material.AIR);
-                    player.getWorld().dropItemNaturally(block.getLocation(), drop);
-                    try {
-                        e.setDropItems(false); //Apparently, this method does not exist in 1.7
-                    } catch (Throwable ignored) {}
-
-                    client.send(messages.elevatorDestroyed());
-                    block.removeMetadata("elevator_owner", plugin);
-                } else {
-                    e.setCancelled(true);
-                    client.send(messages.elevatorDestroyFail());
                 }
-            } else {
+
                 e.setCancelled(true);
             }
         }
@@ -223,6 +288,35 @@ public class BlockListener implements Listener {
 
         if (ElevatorStorage.isElevator(block)) {
             e.setCancelled(config.preventGrief());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onPistonExtend(BlockPistonExtendEvent e) {
+        for (Block block : e.getBlocks()) {
+            if (ElevatorStorage.isElevator(block)) {
+                e.setCancelled(true);
+                break;
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onPistonRetract(BlockPistonRetractEvent e) {
+        try {
+            for (Block block : e.getBlocks()) {
+                if (ElevatorStorage.isElevator(block)) {
+                    e.setCancelled(true);
+                    break;
+                }
+            }
+        } catch (Throwable ex) {
+            Location retract = e.getRetractLocation();
+            Block block = retract.getBlock();
+
+            if (ElevatorStorage.isElevator(block)) {
+                e.setCancelled(true);
+            }
         }
     }
 }

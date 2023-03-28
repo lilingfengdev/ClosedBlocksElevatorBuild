@@ -2,6 +2,7 @@ package ml.karmaconfigs.closedblockselevator.listener;
 
 import ml.karmaconfigs.closedblockselevator.storage.Config;
 import ml.karmaconfigs.closedblockselevator.storage.ElevatorStorage;
+import ml.karmaconfigs.closedblockselevator.storage.OwnerStorage;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
@@ -41,7 +42,7 @@ public final class ExplodeListener17 implements Listener {
                     block.setType(Material.AIR);
                     block.getWorld().dropItemNaturally(block.getLocation(), drop);
 
-                    block.removeMetadata("elevator_owner", plugin);
+                    OwnerStorage.remove(block);
                 }
             }
         }

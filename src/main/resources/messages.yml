@@ -29,8 +29,27 @@ ElevatorReceive: "&aYou've received x{amount} elevators"
 #When a player is not online
 NotOnline: "&cThe player {player} is not online"
 
+#When a player uses an elevator to go up
+ElevatorBossUp: "&bLevel: &a{level}"
+
+#When a player uses an elevator to go down
+ElevatorBossDown: "&bLevel: &c{level}"
+
 #When a player doesn't have enough space in his inventory
 NotEnoughSpace: "&cThe player {player} didn't had enough space to keep x{amount} elevators. So we gave him x{new_amount} instead"
 
 #When permissions are required
 Permission: "&cYou do not have enough permissions to execute that command!"
+
+#Custon model data messages
+CustomModelData:
+  RequestTextures: "&cThis server uses custom textures for some blocks/items, download the resource pack when required to ensure a complete experience in the server"
+  DeclinedTextures:
+    - "&7ServerName"
+    - ""
+    - "&cPlease accept the resource pack"
+    - "&cto play in this server. The resource"
+    - "&cpack contains custom items and blocks"
+    - "&cwhich our resource pack provides and"
+    - "&cyou need to ensure a full experience."
+  "NoTextures": "&cYou are viewing a simple version of the elevator. This servers provides a resource pack to make it look better, install the resource pack using /elevator-pack command"
