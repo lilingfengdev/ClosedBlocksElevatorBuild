@@ -1,5 +1,8 @@
 package ml.karmaconfigs.closedblockselevator;
 
+import com.github.fierioziy.particlenativeapi.api.ParticleNativeAPI;
+import com.github.fierioziy.particlenativeapi.api.utils.ParticleException;
+import com.github.fierioziy.particlenativeapi.core.ParticleNativeCore;
 import ml.karmaconfigs.api.bukkit.KarmaPlugin;
 import ml.karmaconfigs.api.bukkit.reflection.BossMessage;
 import ml.karmaconfigs.api.bukkit.server.BukkitServer;
@@ -32,6 +35,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ShapedRecipe;
 
 import java.io.Serializable;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -58,6 +63,7 @@ public final class Main extends KarmaPlugin {
 
     private static boolean licensed = false;
 
+    public static ParticleNativeAPI particleAPI;
 
     @Override
     @SuppressWarnings("deprecation")
@@ -146,8 +152,22 @@ public final class Main extends KarmaPlugin {
                 shaped = config.getRecipe();
                 getServer().addRecipe(shaped);
             }
+
+            try {
+                particleAPI = ParticleNativeCore.loadAPI(this);
+                plugin.console().send("ClosedBlocksElevators uses ParticleNativeAPI to display particles (special thanks to Fierioziy for making this possible)", Level.WARNING);
+            } catch (ParticleException ex) {// optional runtime exception catch
+                plugin.console().send("An error occurred while loading ParticleNativeAPI [Fierioziy]. More information about this problem can be found in logs", Level.GRAVE);
+                plugin.logger().scheduleLog(Level.GRAVE, ex);
+                plugin.logger().scheduleLog(Level.INFO, "Failed to intialize particle native API");
+            }
+
+            plugin.logger().scheduleLog(Level.WARNING, "Plugin started!");
         } catch (Throwable ex) {
-            ex.printStackTrace();
+            plugin.logger().scheduleLog(Level.GRAVE, ex);
+            plugin.logger().scheduleLog(Level.INFO, "Failed to initialize ClosedBlocksElevator");
+
+            plugin.console().send("Failed to start ClosedBlocksElevator. More information can be find in plugin logs", Level.WARNING);
         }
     }
 
@@ -162,15 +182,13 @@ public final class Main extends KarmaPlugin {
 
     @Override
     public String updateURL() {
-        return URLUtils.getOrBackup(
-                "https://karmaconfigs.github.io/updates/ClosedBlocksElevator/latest.kup",
-                "https://karmadev.es/cbe/latest.kup",
-                "https://karmaconfigs.ml/cbe/latest.kup",
-                "https://karmarepo.ml/cbe/latest.kup",
-                "https://backup.karmadev.es/cbe/latest.kup",
-                "https://backup.karmaconfigs.ml/cbe/latest.kup",
-                "https://backup.karmarepo.ml/cbe/latest.kup"
-        ).toString();
+        URL url = URLUtils.getOrBackup(
+                "https://raw.githubusercontent.com/KarmaDeb/updates/master/ClosedBlocksElevator/latest.kup",
+                "https://karmadev.es/cbe/latest.kup"
+        );
+
+        if (url != null) return url.toString();
+        return "https://karmadev.es/cbe/latest.kup";
     }
 
     public static boolean hasItemAdder() {

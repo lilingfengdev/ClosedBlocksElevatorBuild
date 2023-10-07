@@ -38,6 +38,12 @@ ElevatorBossDown: "&bLevel: &c{level}"
 #When a player doesn't have enough space in his inventory
 NotEnoughSpace: "&cThe player {player} didn't had enough space to keep x{amount} elevators. So we gave him x{new_amount} instead"
 
+#When a player makes an elevator visible
+ElevatorVisible: "&aElevator particles are now visible to everyone"
+
+#When a player makes an elevator invisible
+ElevatorInvisible: "&aElevator particles are now visible only by you"
+
 #When permissions are required
 Permission: "&cYou do not have enough permissions to execute that command!"
 

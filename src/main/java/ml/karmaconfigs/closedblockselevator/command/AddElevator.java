@@ -74,6 +74,7 @@ public class AddElevator implements CommandExecutor {
                             try {
                                 int amount = Integer.parseInt(player_name);
                                 player_name = issuer.getName();
+                                player = issuer;
 
                                 Inventory player_inventory = issuer.getInventory();
                                 int available = countSlots(player);
@@ -270,6 +271,7 @@ public class AddElevator implements CommandExecutor {
                 elevator = IAdder.getItem();
                 elevator.setAmount(stack);
             }
+
             if (elevator == null) {
                 elevator = new ItemStack(config.elevatorItem(), stack);
             }

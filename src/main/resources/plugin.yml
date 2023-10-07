@@ -10,6 +10,11 @@ authors: [ KarmaDev ]
 description: ClosedBlocksElevator is a plugin to add elevators into minecraft. The plugin works a bit like the mod
 website: https://karmadev.es/
 
+permissions:
+  elevator.particle:
+    description: View all elevators particles
+    default: op
+
 commands:
   give-elevator:
     description: Give an elevator to X player or yourself

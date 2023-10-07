@@ -11,6 +11,31 @@ BreakOnlyOwner: false
 #Show boss bar when a client uses an elevator
 ShowBossBar: true
 
+#BossBar configurations
+# Supported colors (limited by minecraft):
+#   - PINK
+#   - BLUE
+#   - RED
+#   - GREEN
+#   - YELLOW
+#   - PURPLE
+#   - WHITE
+#
+# Supported styles:
+#   - SOLID
+#   - SEGMENTED_6
+#   - SEGMENTED_10
+#   - SEGMENTED_12
+#   - SEGMENTED_20
+#
+BossBar:
+  Up:
+    Style: solid
+    Color: green
+  Down:
+    Stlye: solid
+    Color: green
+
 #Show particles in the direction where
 #the elevator goes
 ShowParticles: true
@@ -37,6 +62,9 @@ PreventGrief: true
 #MAKE SURE IF YOU HAVE A MODEL DATA TO ALSO MODIFY THE
 #ItemModelData value
 ItemMaterial: Quartz block
+
+#The offset when placing an elevator
+PlaceOffset: 0.0
 
 #Only for legacy servers, in where blocks still had IDs, for example
 # 1:1 or 5:2. This number is the second id which defines the block type.

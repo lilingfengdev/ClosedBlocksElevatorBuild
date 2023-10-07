@@ -89,7 +89,7 @@ public class ActionListener implements Listener {
         if (e.isSneaking() && !deny_use.contains(player.getUniqueId())) {
             Block block = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
             if (block.getType().equals(Material.AIR)) {
-                block = block.getRelative(BlockFace.UP);
+                block = block.getRelative(BlockFace.DOWN);
             }
 
             if (ElevatorStorage.isElevator(block)) {
@@ -163,7 +163,7 @@ public class ActionListener implements Listener {
                         if (!deny_use.contains(player.getUniqueId())) {
                             Block from_block = from.getBlock().getRelative(BlockFace.DOWN);
                             if (from_block.getType().equals(Material.AIR)) {
-                                from_block = from.getBlock().getRelative(BlockFace.UP);
+                                from_block = from.getBlock().getRelative(BlockFace.DOWN);
                             }
 
                             if (ElevatorStorage.isElevator(from_block)) {

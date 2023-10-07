@@ -3,6 +3,7 @@ package ml.karmaconfigs.closedblockselevator;
 import ml.karmaconfigs.api.bukkit.server.BukkitServer;
 import ml.karmaconfigs.api.bukkit.server.Version;
 import ml.karmaconfigs.api.common.string.StringUtils;
+import ml.karmaconfigs.api.common.utils.enums.Level;
 import ml.karmaconfigs.closedblockselevator.storage.Config;
 import ml.karmaconfigs.closedblockselevator.storage.OwnerStorage;
 import ml.karmaconfigs.closedblockselevator.storage.elevator.Elevator;
@@ -51,59 +52,56 @@ public final class Client {
     public void addScheduler() {
         UUID id = player.getUniqueId();
 
-        if (BukkitServer.isOver(Version.v1_13)) {
-            //When particle API was implemented
-            if (!elevator_scheduler.containsKey(player.getUniqueId())) {
-                Random random = new Random();
-                int min = 60;
-                int max = 75;
-                int randomNumber = random.nextInt(max - min + 1) + min; //Different time so it won't be that laggy
+        if (!elevator_scheduler.containsKey(player.getUniqueId())) {
+            Random random = new Random();
+            int min = 60;
+            int max = 75;
+            int randomNumber = random.nextInt(max - min + 1) + min; //Different time so it won't be that laggy
 
-                Config config = new Config();
-                AtomicBoolean printed_error = new AtomicBoolean(false);
-                BukkitTask scheduler = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
-                    Player instance = plugin.getServer().getPlayer(id);
-                    if (instance != null && instance.isOnline() && config.showParticles()) {
-                        World world = instance.getWorld();
-                        Location location = instance.getLocation();
+            Config config = new Config();
+            AtomicBoolean printed_error = new AtomicBoolean(false);
+            BukkitTask scheduler = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+                Player instance = plugin.getServer().getPlayer(id);
+                if (instance != null && instance.isOnline() && config.showParticles()) {
+                    World world = instance.getWorld();
+                    Location location = instance.getLocation();
 
-                        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> ElevatorStorage.loadElevators(world).whenCompleteAsync((elevators, error) -> {
-                            if (error == null) {
-                                for (ElevatorLine elevator : elevators) {
-                                    Elevator e;
-                                    Elevator pre = null;
-                                    while ((e = elevator.up()) != null) {
-                                        Block block = e.getBlock();
-                                        if (OwnerStorage.isOwner(instance, block)) {
-                                            Elevator next = elevator.up();
-                                            Elevator previus = pre;
-                                            if (next != null) {
-                                                elevator.down();
-                                            }
-
-                                            Location blockLocation = block.getLocation().clone();
-                                            blockLocation.add(0.5, 1, 0.5);
-
-                                            if (blockLocation.distance(location) <= 10) {
-                                                plugin.getServer().getScheduler().runTask(plugin, () -> ParticleUtil.showArrowDirections(instance, blockLocation, next != null, previus != null));
-                                            }
-
-                                            pre = e;
+                    plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> ElevatorStorage.loadElevators(world).whenCompleteAsync((elevators, error) -> {
+                        if (error == null) {
+                            for (ElevatorLine elevator : elevators) {
+                                Elevator e;
+                                Elevator pre = null;
+                                while ((e = elevator.up()) != null) {
+                                    Block block = e.getBlock();
+                                    if (OwnerStorage.canSee(player, block) || player.hasPermission("elevator.particle")) {
+                                        Elevator next = elevator.up();
+                                        Elevator previus = pre;
+                                        if (next != null) {
+                                            elevator.down();
                                         }
+
+                                        Location blockLocation = block.getLocation().clone();
+                                        blockLocation.add(0.5, 1, 0.5);
+
+                                        if (blockLocation.distance(location) <= 10) {
+                                            plugin.getServer().getScheduler().runTask(plugin, () -> ParticleUtil.showArrowDirections(instance, blockLocation, next != null, previus != null));
+                                        }
+
+                                        pre = e;
                                     }
                                 }
-                            } else {
-                                if (!printed_error.get()) {
-                                    error.printStackTrace();
-                                    printed_error.set(true);
-                                }
                             }
-                        }));
-                    }
-                }, 0, randomNumber);
+                        } else {
+                            if (!printed_error.get()) {
+                                plugin.logger().scheduleLog(Level.GRAVE, error);
+                                printed_error.set(true);
+                            }
+                        }
+                    }));
+                }
+            }, 0, randomNumber);
 
-                elevator_scheduler.put(id, scheduler);
-            }
+            elevator_scheduler.put(id, scheduler);
         }
     }
 

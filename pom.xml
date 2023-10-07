@@ -6,7 +6,7 @@
 
     <groupId>ml.karmaconfigs</groupId>
     <artifactId>ClosedBlocksElevator</artifactId>
-    <version>1.0.11</version>
+    <version>1.0.13</version>
     <packaging>jar</packaging>
 
     <name>ClosedBlocksElevator</name>
@@ -43,6 +43,17 @@
                         </goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <!-- replace shaded version with main artifact -->
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
+
+                            <!-- relocate API classes to avoid same-classpath-conflicts -->
+                            <!-- with other plugins using this core API -->
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.github.fierioziy.particlenativeapi</pattern>
+                                    <shadedPattern>ml.karmaconfigs.closedblockselevator.shaded.pna</shadedPattern>
+                                </relocation>
+                            </relocations>
                         </configuration>
                     </execution>
                 </executions>
@@ -89,7 +100,7 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.19.3-R0.1-SNAPSHOT</version>
+            <version>1.20.1-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -109,6 +120,12 @@
             <artifactId>annotations</artifactId>
             <version>23.0.0</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.fierioziy.particlenativeapi</groupId>
+            <artifactId>ParticleNativeAPI-core</artifactId>
+            <version>4.0.0</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

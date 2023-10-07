@@ -24,7 +24,11 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static ml.karmaconfigs.closedblockselevator.ClosedBlocksElevator.LAST_LINE_MATCHER;
 import static ml.karmaconfigs.closedblockselevator.ClosedBlocksElevator.plugin;
@@ -33,6 +37,8 @@ public class BlockListener implements Listener {
 
     private Sound enderman_sound = null;
     private Sound block_break = null;
+
+    private final ConcurrentMap<UUID, Long> iterationMap = new ConcurrentHashMap<>();
 
     public BlockListener() {
         Sound[] sounds = Sound.values();
@@ -71,6 +77,11 @@ public class BlockListener implements Listener {
                                     Block where = clicked.getRelative(e.getBlockFace());
 
                                     if (ElevatorStorage.addElevator(where, hand)) {
+                                        if (clicked.getType().isInteractable() && !player.isSneaking()) {
+                                            e.setCancelled(true); //Prevent the elevator from being placed
+                                            return;
+                                        }
+
                                         OwnerStorage.assign(player, where);
                                         client.send(messages.elevatorPlaced());
 
@@ -145,6 +156,29 @@ public class BlockListener implements Listener {
                                 }
                             }
                         }
+                    }
+                }
+            } else {
+                if (player.isSneaking()) {
+                    if (OwnerStorage.isOwner(player, clicked)) {
+                        long lastIteration = iterationMap.getOrDefault(player.getUniqueId(), -1l);
+                        long now = System.currentTimeMillis();
+
+                        if (now >= lastIteration) {
+                            OwnerStorage.setVisibility(clicked, !OwnerStorage.getVisibility(clicked));
+
+                            if (OwnerStorage.getVisibility(clicked)) {
+                                client.send(messages.elevatorVisible());
+                            } else {
+                                client.send(messages.elevatorInvisible());
+                            }
+
+                            now += 1000;
+                            iterationMap.put(player.getUniqueId(), now);
+                        }
+
+                        e.setCancelled(true);
+                        return;
                     }
                 }
             }

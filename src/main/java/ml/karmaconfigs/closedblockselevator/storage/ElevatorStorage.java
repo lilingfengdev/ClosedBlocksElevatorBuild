@@ -238,14 +238,14 @@ public final class ElevatorStorage {
                         if (element.isPrimitive() && element.getAsPrimitive().isNumber()) {
                             int material_ordinal = element.getAsInteger();
                             Material material = Material.values()[material_ordinal];
-                            if (material == null || material.equals(Material.AIR)) {
+                            /*if (material == null || material.equals(Material.AIR)) {
                                 material = Material.QUARTZ_BLOCK;
                                 hideElevator(new Elevator(destination.getLocation(), material, (current_index - 1)), material);
                             }
 
                             if (!destination.getType().equals(material)) {
                                 destination.setType(material);
-                            }
+                            }*/
 
                             return new Elevator(destination.getLocation(), material, (current_index - 1));
                         } else {
@@ -253,7 +253,7 @@ public final class ElevatorStorage {
                                 String ia_id = element.getAsString();
                                 ItemStack item = IAdder.getItem(ia_id);
                                 if (item != null) {
-                                    IAdder.tryBlock(ia_id, destination.getLocation());
+                                    //IAdder.tryBlock(ia_id, destination.getLocation());
                                     return new Elevator(destination.getLocation(), destination.getType(), (current_index - 1));
                                 }
                             }
@@ -313,14 +313,14 @@ public final class ElevatorStorage {
                         if (element.isPrimitive() && element.getAsPrimitive().isNumber()) {
                             int material_ordinal = element.getAsInteger();
                             Material material = Material.values()[material_ordinal];
-                            if (material == null || material.equals(Material.AIR)) {
+                            /*if (material == null || material.equals(Material.AIR)) {
                                 material = Material.QUARTZ_BLOCK;
                                 hideElevator(new Elevator(destination.getLocation(), material, (current_index + 1)), material);
                             }
 
                             if (!destination.getType().equals(material)) {
                                 destination.setType(material);
-                            }
+                            }*/
 
                             return new Elevator(destination.getLocation(), material, (current_index + 1));
                         } else {
@@ -328,7 +328,7 @@ public final class ElevatorStorage {
                                 String ia_id = element.getAsString();
                                 ItemStack item = IAdder.getItem(ia_id);
                                 if (item != null) {
-                                    IAdder.tryBlock(ia_id, destination.getLocation());
+                                    //IAdder.tryBlock(ia_id, destination.getLocation());
                                     return new Elevator(destination.getLocation(), destination.getType(), (current_index + 1));
                                 }
                             }
@@ -376,6 +376,7 @@ public final class ElevatorStorage {
                                 if (element.isPrimitive()) {
                                     ElementPrimitive primitive = element.getAsPrimitive();
                                     if (primitive.isNumber()) {
+
                                         int material_ordinal = element.getAsInteger();
                                         try {
                                             Material material = Material.values()[material_ordinal];
@@ -383,10 +384,10 @@ public final class ElevatorStorage {
                                         } catch (Throwable ignored) {}
                                     } else {
                                         if (primitive.isString() && Main.hasItemAdder()) {
+
                                             String ia_id = element.getAsString();
                                             ItemStack item = IAdder.getItem(ia_id);
                                             if (item != null) {
-                                                IAdder.tryBlock(ia_id, block.getLocation());
                                                 fetched.add(new Elevator(block.getLocation(), block.getType(), lvl));
                                             }
                                         }
@@ -394,7 +395,9 @@ public final class ElevatorStorage {
                                 }
                             }
 
-                            worldElevators.add(new ElevatorLine(fetched.toArray(new Elevator[0])));
+                            if (!fetched.isEmpty()) {
+                                worldElevators.add(new ElevatorLine(fetched.toArray(new Elevator[0])));
+                            }
                         } catch (Throwable ignored) {}
                     }
                 }

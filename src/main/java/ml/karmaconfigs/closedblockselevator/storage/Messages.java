@@ -74,6 +74,14 @@ public final class Messages {
                 .replace("{new_amount}", String.valueOf(new_amount));
     }
 
+    public String elevatorVisible() {
+        return yaml.getString("ElevatorVisible", "&aElevator particles are now visible to everyone");
+    }
+
+    public String elevatorInvisible() {
+        return yaml.getString("ElevatorInvisible", "&aElevator particles are now visible only by you");
+    }
+
     public String permission() {
         return yaml.getString("Permission", "&cYou do not have enough permissions to execute that command!");
     }

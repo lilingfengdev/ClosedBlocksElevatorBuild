@@ -1,8 +1,13 @@
 package ml.karmaconfigs.closedblockselevator.util;
 
+import com.github.fierioziy.particlenativeapi.api.ParticleNativeAPI;
+import com.github.fierioziy.particlenativeapi.api.packet.ParticlePacket;
+import ml.karmaconfigs.api.bukkit.server.BukkitServer;
+import ml.karmaconfigs.api.bukkit.server.Version;
+import ml.karmaconfigs.closedblockselevator.Main;
+import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
-import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
@@ -37,7 +42,7 @@ public class ParticleUtil {
         for (int i = 0; i < 30; i++) { //3 blocks
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                 Location inst = newLocation.clone();
-                playParticleAt(p, running, new Particle.DustOptions(from, 1f), inst);
+                playParticleAt(p, running, from, inst);
                 //world.spawnParticle(Particle.REDSTONE, inst, 0, dustOptions);
 
                 newLocation.add(0, formula, 0);
@@ -49,11 +54,18 @@ public class ParticleUtil {
         }, 30);
     }
 
-    private static void playParticleAt(final Player player, final AtomicBoolean repeat, final Particle.DustOptions options, final Location location) {
-        player.spawnParticle(Particle.REDSTONE, location.clone(), 0, options);
+    private static void playParticleAt(final Player player, final AtomicBoolean repeat, final Color color, final Location location) {
+        ParticleNativeAPI pna = Main.particleAPI;
+        if (pna == null || BukkitServer.isOver(Version.v1_12)) {
+            player.spawnParticle(org.bukkit.Particle.REDSTONE, location.clone(), 0, new org.bukkit.Particle.DustOptions(color, 1f));
+        } else {
+            ParticlePacket packet = pna.LIST_1_8.REDSTONE.packetColored(true, location.clone(), color);
+            packet.sendInRadiusTo(Bukkit.getServer().getOnlinePlayers(), 10);
+        }
+
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
             if (repeat.get()) {
-                playParticleAt(player, repeat, options, location.clone());
+                playParticleAt(player, repeat, color, location.clone());
             }
         }, 10);
     }

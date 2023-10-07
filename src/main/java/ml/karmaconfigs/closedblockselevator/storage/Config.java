@@ -122,6 +122,10 @@ public final class Config {
         return yaml.getString("ItemMaterial", "QUARTZ_BLOCK");
     }
 
+    public double offset() {
+        return yaml.getDouble("PlaceOffset", 0d);
+    }
+
     public String elevatorItemName() {
         return StringUtils.toColor(yaml.getString("ItemName", "&fElevator")); //Color ready
     }
